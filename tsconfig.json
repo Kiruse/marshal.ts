@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2020",
+    "esModuleInterop": true,
+    "declaration": true,
+    "sourceMap": true,
+    "strict": true,
+    "types": ["bun-types"],
+  },
+}

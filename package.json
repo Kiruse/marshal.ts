@@ -1,0 +1,30 @@
+{
+  "name": "@kiruse/marshal",
+  "version": "0.1.0",
+  "description": "Extensible un/marshalling layer for I/O operations",
+  "main": "index.js",
+  "scripts": {
+    "prepare": "tsc -p tsconfig.build.json",
+    "prepublish": "tsc -p tsconfig.build.json",
+    "test": "bun test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kiruse/marshal.ts.git"
+  },
+  "keywords": [
+    "marshal",
+    "io",
+    "serialization"
+  ],
+  "author": "kiruse",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kiruse/marshal.ts/issues"
+  },
+  "homepage": "https://github.com/kiruse/marshal.ts#readme",
+  "devDependencies": {
+    "bun-types": "^1.0.31",
+    "typescript": "^5.4.2"
+  }
+}
