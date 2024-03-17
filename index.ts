@@ -2,7 +2,7 @@ export type Marshaller = (value: unknown, marshal: (value: unknown) => unknown) 
 export type Unmarshaller<T> = (value: unknown, unmarshal: (value: unknown) => unknown) => MarshalResult<T>;
 
 /** A shorthand constant to indicate an un/marshaller is passing on the given value. */
-export const pass: MarshalResult<unknown> = ({ success: false });
+export const pass: MarshalResult<any> = ({ success: false });
 /** A shorthand wrapper function to indicate an un/marshaller has processed the value, and what the processed value is. */
 export const morph = <T>(value: T): MarshalResult<T> => ({ success: true, value });
 
