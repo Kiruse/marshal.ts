@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'bun:test';
-import { RecaseMarshaller, createMarshal, defineMarshaller, marshal, morph, pass, unmarshal } from './index';
+import {
+  BigintMarshaller, createMarshal, defineMarshaller, IgnoreMarshaller, marshal, morph, pass,
+  RecaseMarshaller, unmarshal
+} from './index';
 
 describe('marshal.ts', () => {
   test('Default Marshallers', () => {
@@ -24,6 +27,13 @@ describe('marshal.ts', () => {
     expect(unmarshal(marshal({ foo: 'foo' }))).toEqual({ foo: 'foo' });
   });
 
+  test('Splice Marshallers', () => {
+    const { marshal, unmarshal, bundles } = createMarshal.withDefault();
+    bundles.splice(bundles.indexOf(BigintMarshaller), 1);
+    expect(marshal(123456n)).toBe(123456n);
+    expect(unmarshal(marshal(123456n))).toBe(123456n);
+  });
+
   test('Recasing Marshal', () => {
     const { marshal, unmarshal } = createMarshal.withDefault(
       RecaseMarshaller(
@@ -33,5 +43,15 @@ describe('marshal.ts', () => {
     );
     expect(marshal({ fooBar: 'baz' })).toEqual({ foo_bar: 'baz' });
     expect(unmarshal(marshal({ fooBar: 'baz' }))).toEqual({ fooBar: 'baz' });
+  });
+
+  test('Ignore Marshal', () => {
+    class Foo {
+      bar = 'baz';
+    }
+
+    const { marshal, unmarshal } = createMarshal.withDefault(IgnoreMarshaller(Foo));
+    expect(marshal(new Foo())).toBeInstanceOf(Foo);
+    expect(unmarshal(marshal(new Foo()))).toBeInstanceOf(Foo);
   })
 });

@@ -1,5 +1,6 @@
 export type Marshaller = (value: unknown, marshal: (value: unknown) => unknown) => MarshalResult<unknown>;
 export type Unmarshaller<T> = (value: unknown, unmarshal: (value: unknown) => unknown) => MarshalResult<T>;
+type Ctor<Args extends any[] = any[], T = any> = new (...args: Args) => T;
 
 /** A shorthand constant to indicate an un/marshaller is passing on the given value. */
 export const pass: MarshalResult<any> = ({ success: false });
@@ -76,9 +77,17 @@ export const SetMarshaller = defineMarshaller<Set<unknown>>(
   }
 );
 
+export const IgnoreMarshaller = (...types: Ctor[]) => defineMarshaller<unknown>(
+  (value) => types.find(type => value instanceof type) ? morph(value) : pass,
+  (value) => types.find(type => value instanceof type) ? morph(value) : pass,
+);
+
 export function createMarshal(...bundles: MarshalBundle<any>[]) {
+  const self = { marshal, unmarshal, bundles };
+  return self;
+
   function marshal(value: unknown): unknown {
-    for (const bundle of bundles) {
+    for (const bundle of self.bundles) {
       const result = bundle.marshal(value, marshal);
       if (result.success) return result.value;
     }
@@ -86,14 +95,12 @@ export function createMarshal(...bundles: MarshalBundle<any>[]) {
   }
 
   function unmarshal(value: unknown): unknown {
-    for (const bundle of bundles) {
+    for (const bundle of self.bundles) {
       const result = bundle.unmarshal(value, unmarshal);
       if (result.success) return result.value;
     }
     return value;
   }
-
-  return { marshal, unmarshal };
 }
 
 createMarshal.withDefault = (...bundles: MarshalBundle<any>[]) => createMarshal(
