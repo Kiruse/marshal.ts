@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  BigintMarshaller, createMarshal, defineMarshaller, IgnoreMarshaller, marshal, morph, pass,
-  RecaseMarshaller, unmarshal
+  BigintMarshalUnit, createMarshaller, DateMarshalUnit, defineMarshalUnit, extendDefaultMarshaller,
+  extendMarshaller, IgnoreMarshaller, marshal, MarshalUnit, morph, pass, RecaseMarshalUnit,
+  SetMarshalUnit, unmarshal
 } from './index';
 
 describe('marshal.ts', () => {
@@ -15,32 +16,42 @@ describe('marshal.ts', () => {
   });
 
   test('Custom Marshallers', () => {
-    const { marshal, unmarshal } = createMarshal.withDefault(
-      defineMarshaller(
+    const { marshal, unmarshal } = extendDefaultMarshaller([
+      defineMarshalUnit(
         (value) => typeof value === 'string' && value === 'foo' ? morph('bar') : pass,
         (value) => typeof value === 'string' && value === 'bar' ? morph('foo') : pass
       ),
-    );
+    ]);
     expect(marshal('foo')).toBe('bar');
     expect(unmarshal(marshal('foo'))).toBe('foo');
     expect(marshal({ foo: 'foo' })).toEqual({ foo: 'bar' });
     expect(unmarshal(marshal({ foo: 'foo' }))).toEqual({ foo: 'foo' });
   });
 
-  test('Splice Marshallers', () => {
-    const { marshal, unmarshal, bundles } = createMarshal.withDefault();
-    bundles.splice(bundles.indexOf(BigintMarshaller), 1);
-    expect(marshal(123456n)).toBe(123456n);
-    expect(unmarshal(marshal(123456n))).toBe(123456n);
+  test('Dynamically Extended Custom Marshallers', () => {
+    const baseUnits = [BigintMarshalUnit] as MarshalUnit[];
+    const { marshal, unmarshal } = extendMarshaller(
+      createMarshaller(baseUnits),
+      [SetMarshalUnit],
+    );
+
+    const date = new Date('2021-01-01');
+    const set  = new Set([1, 2, 3]);
+    expect(marshal(date)).toBe(date);
+    expect(unmarshal(marshal(set))).toEqual(set);
+
+    baseUnits.push(DateMarshalUnit);
+    expect(marshal(date)).toBe('2021-01-01T00:00:00.000Z');
+    expect(unmarshal(marshal(set))).toEqual(set);
   });
 
   test('Recasing Marshal', () => {
-    const { marshal, unmarshal } = createMarshal.withDefault(
-      RecaseMarshaller(
+    const { marshal, unmarshal } = extendDefaultMarshaller([
+      RecaseMarshalUnit(
         key => key.replace(/([A-Z])/g, '_$1').toLowerCase(),
         key => key.replace(/_(.)/g, (_, c) => c.toUpperCase()),
       ),
-    );
+    ]);
     expect(marshal({ fooBar: 'baz' })).toEqual({ foo_bar: 'baz' });
     expect(unmarshal(marshal({ fooBar: 'baz' }))).toEqual({ fooBar: 'baz' });
   });
@@ -50,7 +61,7 @@ describe('marshal.ts', () => {
       bar = 'baz';
     }
 
-    const { marshal, unmarshal } = createMarshal.withDefault(IgnoreMarshaller(Foo));
+    const { marshal, unmarshal } = extendDefaultMarshaller([IgnoreMarshaller(Foo)]);
     expect(marshal(new Foo())).toBeInstanceOf(Foo);
     expect(unmarshal(marshal(new Foo()))).toBeInstanceOf(Foo);
   })
