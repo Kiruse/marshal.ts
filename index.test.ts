@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   BigintMarshalUnit, createMarshaller, DateMarshalUnit, defineMarshalUnit, extendDefaultMarshaller,
-  extendMarshaller, IgnoreMarshaller, marshal, MarshalUnit, morph, pass, RecaseMarshalUnit,
+  extendMarshaller, IgnoreMarshalUnit, marshal, MarshalUnit, morph, pass, RecaseMarshalUnit,
   SetMarshalUnit, unmarshal
 } from './index';
 
@@ -76,7 +76,7 @@ describe('marshal.ts', () => {
       bar = 'baz';
     }
 
-    const { marshal, unmarshal } = extendDefaultMarshaller([IgnoreMarshaller(Foo)]);
+    const { marshal, unmarshal } = extendDefaultMarshaller([IgnoreMarshalUnit(Foo)]);
     expect(marshal(new Foo())).toBeInstanceOf(Foo);
     expect(unmarshal(marshal(new Foo()))).toBeInstanceOf(Foo);
   });

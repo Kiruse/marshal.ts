@@ -97,13 +97,13 @@ export const SetMarshalUnit = defineMarshalUnit<Set<unknown>>(
   }
 );
 
-export const IgnoreMarshaller = (...types: Ctor[]) => defineMarshalUnit<unknown>(
+export const IgnoreMarshalUnit = (...types: Ctor[]) => defineMarshalUnit<unknown>(
   (value) => types.find(type => value instanceof type) ? morph(value) : pass,
   (value) => types.find(type => value instanceof type) ? morph(value) : pass,
 );
 
-export const ToJsonMarshaller = defineMarshalUnit<unknown>(
-  (value: any, marshal) => value && typeof value === 'object' && typeof value.toJSON === 'function' ? morph(marshal(value.toJSON())) : pass,
+export const ToJsonMarshalUnit = defineMarshalUnit<unknown>(
+  (value: any, marshal) => value && typeof value.toJSON === 'function' ? morph(marshal(value.toJSON())) : pass,
   () => pass,
   true,
 );
@@ -158,7 +158,7 @@ export const defaultMarshalUnits = [
   BigintMarshalUnit,
   DateMarshalUnit,
   SetMarshalUnit,
-  ToJsonMarshaller,
+  ToJsonMarshalUnit,
   ObjectMarshalUnit,
 ];
 
