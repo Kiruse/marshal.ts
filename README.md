@@ -80,6 +80,9 @@ expect(marshal(ref)).toEqual({ foo_bar_baz: 'quux' });
 expect(unmarshal(marshal(ref))).toEqual(ref);
 ```
 
+### `.toJSON()` Support
+This library provides a default Marshal Unit to support the `.toJSON()` method supported by `JSON.stringify` as well. However, just like `JSON.stringify`, it is unable to unmarshal such an object. `.toJSON()` is a one-way road. If you need to support reconstructing objects serialized with `.toJSON()`, it is better to build a custom marshaller or marshal unit.
+
 ## Marshal Units & Marshallers
 This library distinguishes between *Marshal Units* and `Marshaller`s.
 

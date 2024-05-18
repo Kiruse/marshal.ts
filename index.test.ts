@@ -15,6 +15,21 @@ describe('marshal.ts', () => {
     expect(unmarshal(marshal({ foo: 'bar', baz: 123n, set: new Set([1, 2, 3]) }))).toEqual({ foo: 'bar', baz: 123n, set: new Set([1, 2, 3]) });
   });
 
+  test('toJSON Marshaller', () => {
+    class Foo {
+      #value: string;
+      constructor(value: string) {
+        this.#value = value;
+      }
+      toJSON() {
+        return { value: this.#value };
+      }
+    }
+
+    expect(marshal(new Foo('bar'))).toEqual({ value: 'bar' });
+    // unmarshal not supported as toJSON is considered a one-way road
+  });
+
   test('Custom Marshallers', () => {
     const { marshal, unmarshal } = extendDefaultMarshaller([
       defineMarshalUnit(
@@ -64,5 +79,5 @@ describe('marshal.ts', () => {
     const { marshal, unmarshal } = extendDefaultMarshaller([IgnoreMarshaller(Foo)]);
     expect(marshal(new Foo())).toBeInstanceOf(Foo);
     expect(unmarshal(marshal(new Foo()))).toBeInstanceOf(Foo);
-  })
+  });
 });

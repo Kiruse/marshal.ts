@@ -102,6 +102,12 @@ export const IgnoreMarshaller = (...types: Ctor[]) => defineMarshalUnit<unknown>
   (value) => types.find(type => value instanceof type) ? morph(value) : pass,
 );
 
+export const ToJsonMarshaller = defineMarshalUnit<unknown>(
+  (value: any, marshal) => value && typeof value === 'object' && typeof value.toJSON === 'function' ? morph(marshal(value.toJSON())) : pass,
+  () => pass,
+  true,
+);
+
 export function createMarshaller(units: Iterable<MarshalUnit>) {
   const self = { marshal, unmarshal, units };
   return self;
@@ -152,6 +158,7 @@ export const defaultMarshalUnits = [
   BigintMarshalUnit,
   DateMarshalUnit,
   SetMarshalUnit,
+  ToJsonMarshaller,
   ObjectMarshalUnit,
 ];
 
