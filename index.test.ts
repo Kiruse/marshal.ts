@@ -1,9 +1,15 @@
 import { describe, expect, test } from 'bun:test';
+import { DateTime } from 'luxon';
 import {
   BigintMarshalUnit, createMarshaller, DateMarshalUnit, defineMarshalUnit, extendDefaultMarshaller,
   extendMarshaller, IgnoreMarshalUnit, marshal, MarshalUnit, morph, pass, RecaseMarshalUnit,
   SetMarshalUnit, unmarshal
 } from './index';
+
+const KeyTestMarshalUnit = defineMarshalUnit(
+  (value, { key }) => value instanceof Date ? morph(value.valueOf()) : pass,
+  (value, { key }) => typeof key === 'string' && key.endsWith('Time') ? morph(new Date(+(value as any))) : pass,
+);
 
 describe('marshal.ts', () => {
   test('Default Marshallers', () => {
@@ -79,5 +85,22 @@ describe('marshal.ts', () => {
     const { marshal, unmarshal } = extendDefaultMarshaller([IgnoreMarshalUnit(Foo)]);
     expect(marshal(new Foo())).toBeInstanceOf(Foo);
     expect(unmarshal(marshal(new Foo()))).toBeInstanceOf(Foo);
+  });
+
+  test('Un/marshal with Key', () => {
+    const { marshal, unmarshal } = extendDefaultMarshaller([KeyTestMarshalUnit]);
+
+    const startTime = DateTime.now().startOf('day').toJSDate();
+    const endTime = DateTime.now().endOf('day').toJSDate();
+
+    const marshalled: any = marshal({ startTime, endTime });
+    const unmarshalled: any = unmarshal(marshalled);
+
+    expect(marshalled.startTime).toBeNumber()
+    expect(marshalled.endTime).toBeNumber();
+
+    expect(unmarshalled).toEqual({ startTime, endTime });
+    expect(unmarshalled.startTime).toBeInstanceOf(Date);
+    expect(unmarshalled.endTime).toBeInstanceOf(Date);
   });
 });

@@ -1,6 +1,6 @@
 {
   "name": "@kiruse/marshal",
-  "version": "0.1.2-fix.1",
+  "version": "0.2.0-rc.1",
   "description": "Extensible un/marshalling layer for I/O operations",
   "main": "index.js",
   "scripts": {
@@ -24,7 +24,9 @@
   },
   "homepage": "https://github.com/kiruse/marshal.ts#readme",
   "devDependencies": {
+    "@types/luxon": "^3.4.2",
     "bun-types": "^1.0.31",
+    "luxon": "^3.4.4",
     "typescript": "^5.4.2"
   }
 }

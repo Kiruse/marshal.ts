@@ -1,6 +1,6 @@
 export type Marshaller = ReturnType<typeof createMarshaller>;
-export type MarshalCallback = (value: unknown, marshal: (value: unknown) => unknown) => MarshalResult<unknown>;
-export type UnmarshalCallback<T> = (value: unknown, unmarshal: (value: unknown) => unknown) => MarshalResult<T>;
+export type MarshalCallback = (value: unknown, ctx: MarshalUnitContext) => MarshalResult<unknown>;
+export type UnmarshalCallback<T> = (value: unknown, ctx: MarshalUnitContext) => MarshalResult<T>;
 type Ctor<Args extends any[] = any[], T = any> = new (...args: Args) => T;
 
 /** A shorthand constant to indicate an un/marshaller is passing on the given value. */
@@ -12,6 +12,15 @@ export interface MarshalUnit<T = any> {
   marshal: MarshalCallback;
   unmarshal: UnmarshalCallback<T>;
   generic: boolean;
+}
+
+export interface MarshalUnitContext {
+  /** A loopback to pass values back through the entire current marshalling pipeline. */
+  marshal: (value: unknown, key?: string | number | null) => unknown;
+  /** A loopback to pass values back through the entire current unmarshalling pipeline. */
+  unmarshal: (value: unknown, key?: string | number | null) => unknown;
+  /** The key of the current property or index that is being un/marshalled, or null if it is the root object/value. */
+  key: string | number | null;
 }
 
 export type MarshalResult<T> =
@@ -61,10 +70,10 @@ export const BigintMarshalUnit = defineMarshalUnit<bigint>(
 );
 
 export const ArrayMarshalUnit = defineMarshalUnit<any[]>(
-  (value, marshal) => Array.isArray(value) ? morph(value.map(v => marshal(v))) : pass,
-  (value, unmarshal) => {
+  (value, { marshal }) => Array.isArray(value) ? morph(value.map((v, i) => marshal(v, i))) : pass,
+  (value, { unmarshal }) => {
     if (!Array.isArray(value)) return pass;
-    return morph(value.map(v => unmarshal(v)));
+    return morph(value.map((v, i) => unmarshal(v, i)));
   }
 );
 
@@ -72,16 +81,16 @@ export const RecaseMarshalUnit = (
   marshalCase: (key: string) => string,
   unmarshalCase: (key: string) => string,
 ) => defineMarshalUnit<unknown>(
-  (value, marshal) => {
+  (value, { marshal }) => {
     if (typeof value !== 'object' || value === null) return pass;
     return morph(Object.fromEntries(
-      Object.entries(value).map(([k, v]) => [marshalCase(k), marshal(v)])
+      Object.entries(value).map(([k, v]) => [marshalCase(k), marshal(v, k)])
     ));
   },
-  (value, unmarshal) => {
+  (value, { unmarshal }) => {
     if (typeof value !== 'object' || value === null) return pass;
     return morph(Object.fromEntries(
-      Object.entries(value).map(([k, v]) => [unmarshalCase(k), unmarshal(v)])
+      Object.entries(value).map(([k, v]) => [unmarshalCase(k), unmarshal(v, k)])
     ));
   },
   true,
@@ -90,10 +99,10 @@ export const RecaseMarshalUnit = (
 export const ObjectMarshalUnit = RecaseMarshalUnit(key => key, key => key);
 
 export const SetMarshalUnit = defineMarshalUnit<Set<unknown>>(
-  (value, marshal) => value instanceof Set ? morph({ $set: Array.from(value).map(v => marshal(v)) }) : pass,
-  (value: any, unmarshal) => {
+  (value, { marshal }) => value instanceof Set ? morph({ $set: Array.from(value).map((v, i) => marshal(v, i)) }) : pass,
+  (value: any, { unmarshal }) => {
     if (typeof value !== 'object' || !Array.isArray(value?.$set)) return pass;
-    return morph(new Set(value.$set.map((v: any) => unmarshal(v))));
+    return morph(new Set(value.$set.map((v: any, i: number) => unmarshal(v, i))));
   }
 );
 
@@ -103,7 +112,7 @@ export const IgnoreMarshalUnit = (...types: Ctor[]) => defineMarshalUnit<unknown
 );
 
 export const ToJsonMarshalUnit = defineMarshalUnit<unknown>(
-  (value: any, marshal) => value && typeof value.toJSON === 'function' ? morph(marshal(value.toJSON())) : pass,
+  (value: any, { marshal, key }) => value && typeof value.toJSON === 'function' ? morph(marshal(value.toJSON(), key)) : pass,
   () => pass,
   true,
 );
@@ -112,29 +121,29 @@ export function createMarshaller(units: Iterable<MarshalUnit>) {
   const self = { marshal, unmarshal, units };
   return self;
 
-  function marshal(value: unknown): unknown {
+  function marshal(value: unknown, key: string | number | null = null): unknown {
     for (const unit of self.units) {
       if (unit.generic) continue;
-      const result = unit.marshal(value, marshal);
+      const result = unit.marshal(value, { marshal, unmarshal, key });
       if (result.success) return result.value;
     }
     for (const unit of self.units) {
       if (!unit.generic) continue;
-      const result = unit.marshal(value, marshal);
+      const result = unit.marshal(value, { marshal, unmarshal, key });
       if (result.success) return result.value;
     }
     return value;
   }
 
-  function unmarshal(value: unknown): unknown {
+  function unmarshal(value: unknown, key: string | number | null = null): unknown {
     for (const unit of self.units) {
       if (unit.generic) continue;
-      const result = unit.unmarshal(value, unmarshal);
+      const result = unit.unmarshal(value, { marshal, unmarshal, key });
       if (result.success) return result.value;
     }
     for (const unit of self.units) {
       if (!unit.generic) continue;
-      const result = unit.unmarshal(value, unmarshal);
+      const result = unit.unmarshal(value, { marshal, unmarshal, key });
       if (result.success) return result.value;
     }
     return value;
