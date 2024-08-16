@@ -3,7 +3,7 @@
 
 In JavaScript, a "data format suitable for storage or transmission" is a *Plain Old JavaScript Object* (POJO) which can be easily serialized in JSON or YAML. This library helps convert runtime objects to and from a JSON object.
 
-While the built-in JSON library supports the `.toJSON()` method, you can only revert this process with a custom reviver in your `JSON.parse` call. `@kiruse/marshal` offers an extensible & reusable alternative where both marshallers & their corresponding unmarshallers are defined physically nearby. Further, you `.toJSON()` can only be added on your own types (unless you monkeypatch a foreign type) whereas marshalling & unmarshalling works on any type.
+While the built-in JSON library supports the `.toJSON()` method, you can only revert this process with a custom reviver in your `JSON.parse` call. `@kiruse/marshal` offers an extensible & reusable alternative where both marshallers & their corresponding unmarshallers are defined physically nearby. Further, `.toJSON()` can only be added on your own types (unless you monkeypatch a foreign type) whereas marshalling & unmarshalling works on any type.
 
 ## Usage
 **Note** that un/marshalling, as a part of I/O operations, cannot reliably recreate your underlying data types without extensive assertions or other assumptions (e.g. the format did not change between program executions). Thus, both `marshal` and `unmarshal` functions intentionally return an `unknown` to require deliberacy on your part.
