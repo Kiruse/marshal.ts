@@ -16,6 +16,7 @@ describe('marshal.ts', () => {
     const date = new Date('2021-01-01');
     expect(unmarshal(marshal(123456n))).toBe(123456n);
     expect(unmarshal(marshal(date))).toEqual(date);
+    expect(unmarshal("2025-01-28T13:52:55.375000+00:00")).toEqual(new Date('2025-01-28T13:52:55.375000+00:00'));
     expect(unmarshal(marshal([1, 2n, date]))).toEqual([1, 2n, date]);
     expect(unmarshal(marshal(new Set([1, 2, 3])))).toEqual(new Set([1, 2, 3, 1]));
     expect(unmarshal(marshal({ foo: 'bar', baz: 123n, set: new Set([1, 2, 3]) }))).toEqual({ foo: 'bar', baz: 123n, set: new Set([1, 2, 3]) });
