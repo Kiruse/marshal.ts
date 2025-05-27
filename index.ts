@@ -81,22 +81,44 @@ export const RecaseMarshalUnit = (
   marshalCase: (key: string) => string,
   unmarshalCase: (key: string) => string,
 ) => defineMarshalUnit<unknown>(
-  (value, { marshal }) => {
+  (value, { marshal, key }) => {
     if (typeof value !== 'object' || value === null) return pass;
-    return morph(Object.fromEntries(
-      Object.entries(value).map(([k, v]) => [marshalCase(k), marshal(v, k)])
-    ));
+    let changed = false;
+    const result = Object.fromEntries(
+      Object.entries(value).map(([k, v]) => {
+        const newKey = marshalCase(k);
+        if (newKey === k) return [k, v];
+        changed = true;
+        return [newKey, v];
+      }),
+    );
+    return changed ? morph(marshal(result, key)) : pass;
   },
-  (value, { unmarshal }) => {
+  (value, { unmarshal, key }) => {
     if (typeof value !== 'object' || value === null) return pass;
-    return morph(Object.fromEntries(
-      Object.entries(value).map(([k, v]) => [unmarshalCase(k), unmarshal(v, k)])
-    ));
+    let changed = false;
+    const result = Object.fromEntries(
+      Object.entries(value).map(([k, v]) => {
+        const newKey = unmarshalCase(k);
+        if (newKey === k) return [k, v];
+        changed = true;
+        return [newKey, v];
+      }),
+    );
+    return changed ? morph(unmarshal(result, key)) : pass;
   },
   true,
 );
 
-export const ObjectMarshalUnit = RecaseMarshalUnit(key => key, key => key);
+export const ObjectMarshalUnit = defineMarshalUnit(
+  (value, { marshal }) => typeof value === 'object' && value !== null ? morph(
+    Object.fromEntries(Object.entries(value).map(([k, v]) => [k, marshal(v, k)]))
+  ) : pass,
+  (value, { unmarshal }) => typeof value === 'object' && value !== null ? morph(
+    Object.fromEntries(Object.entries(value).map(([k, v]) => [k, unmarshal(v, k)]))
+  ) : pass,
+  true,
+);
 
 export const SetMarshalUnit = defineMarshalUnit<Set<unknown>>(
   (value, { marshal }) => value instanceof Set ? morph({ $set: Array.from(value).map((v, i) => marshal(v, i)) }) : pass,
@@ -161,6 +183,18 @@ export const extendMarshaller = (base: Marshaller, units: Iterable<MarshalUnit>)
 
 export const extendDefaultMarshaller = (units: Iterable<MarshalUnit>) =>
   extendMarshaller(defaultMarshaller, units);
+
+/** Utility function to add a finalizer to a marshaller.
+ *
+ * The finalizer is a function that is called after the marshaller has unmarshalled a value and can
+ * be used to perform any final transformations on the value. This is particularly useful for
+ * restoring values that cannot be reliably detected, such as base64 encoded byte arrays.
+ */
+export const addMarshallerFinalizer = <T>(base: Marshaller, finalizer: (value: any) => T): Marshaller => ({
+  marshal: (value) => base.marshal(value),
+  unmarshal: (value) => finalizer(base.unmarshal(value)),
+  units: base.units,
+});
 
 export const defaultMarshalUnits = [
   ArrayMarshalUnit,

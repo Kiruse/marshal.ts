@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { DateTime } from 'luxon';
 import {
+  addMarshallerFinalizer,
   BigintMarshalUnit, createMarshaller, DateMarshalUnit, defineMarshalUnit, extendDefaultMarshaller,
   extendMarshaller, IgnoreMarshalUnit, marshal, MarshalUnit, morph, pass, RecaseMarshalUnit,
   SetMarshalUnit, unmarshal
@@ -103,5 +104,28 @@ describe('marshal.ts', () => {
     expect(unmarshalled).toEqual({ startTime, endTime });
     expect(unmarshalled.startTime).toBeInstanceOf(Date);
     expect(unmarshalled.endTime).toBeInstanceOf(Date);
+  });
+
+  test('Finalizer', () => {
+    const bytes = new Uint8Array([1, 2, 3, 4]);
+    const marshaller = extendDefaultMarshaller([
+      defineMarshalUnit<Uint8Array>(
+        value => value instanceof Uint8Array ? morph(Buffer.from(value).toString('base64')) : pass,
+        value => pass,
+      ),
+    ]);
+
+    const finalized = addMarshallerFinalizer(marshaller, value => {
+      if (value && typeof value.bytes === 'string')
+        value.bytes = Uint8Array.from(Buffer.from(value.bytes, 'base64'));
+      return value;
+    });
+
+    const marshalled: any = finalized.marshal({ bytes });
+    expect(marshalled.bytes).toEqual(Buffer.from(bytes).toString('base64'));
+
+    const unmarshalled: any = finalized.unmarshal(marshalled);
+    expect(unmarshalled.bytes).toBeInstanceOf(Uint8Array);
+    expect(unmarshalled.bytes).toEqual(bytes);
   });
 });

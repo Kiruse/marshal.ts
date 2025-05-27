@@ -192,3 +192,15 @@ const marshaller = combineMarshallers(
 ```
 
 In this snippet, the new `marshaller` returns the first `morph`ed value from the sequential combination of all 3 marshallers. It will first iterate through `LibAMarshaller`, then `LibBMarshaller`, and finally through `defaultMarshaller`. Further, it will first iterate over all non-`generic` marshal units (i.e. *specific units*) across all 3 marshallers, then over all of their *generic marshal units*.
+
+## Key-based Un/Marshalling
+The second argument passed to a marshal unit's `marshal` & `unmarshal` methods is the context object. This context object exposes the `marshal` and `unmarshal` methods which allow you to send an arbitrary value through the entire pipeline. But it also exposes the `key` property which tells you which key of the parent object we are currently un/marshalling. This is especially useful for unmarshalling when keys are marked accordingly, e.g. using a prefix or suffix. For example:
+
+```ts
+import { defineMarshalUnit, morph, pass } from '@kiruse/marshal';
+
+const CustomDateMarshalUnit = defineMarshalUnit(
+  (value: any) => value instanceof Date ? morph(value.valueOf()) : pass,
+  (value: any, { key }) => typeof key === 'string' && key.endsWith('Time') ? morph(new Date(Number(value))) : pass,
+);
+```

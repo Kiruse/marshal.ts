@@ -1,32 +1,33 @@
 {
   "name": "@kiruse/marshal",
-  "version": "0.2.0-rc.1",
-  "description": "Extensible un/marshalling layer for I/O operations",
-  "main": "index.js",
-  "scripts": {
-    "prepare": "tsc -p tsconfig.build.json",
-    "prepublish": "tsc -p tsconfig.build.json",
-    "test": "bun test"
-  },
+  "version": "0.2.1",
+  "author": "kiruse",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kiruse/marshal.ts.git"
   },
+  "main": "index.js",
+  "devDependencies": {
+    "@types/bun": "^1.2.14",
+    "@types/luxon": "^3.4.2",
+    "luxon": "^3.4.4",
+    "typescript": "^5.4.2"
+  },
+  "bugs": {
+    "url": "https://github.com/kiruse/marshal.ts/issues"
+  },
+  "description": "Extensible un/marshalling layer for I/O operations",
+  "homepage": "https://github.com/kiruse/marshal.ts#readme",
   "keywords": [
     "marshal",
     "io",
     "serialization"
   ],
-  "author": "kiruse",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/kiruse/marshal.ts/issues"
-  },
-  "homepage": "https://github.com/kiruse/marshal.ts#readme",
-  "devDependencies": {
-    "@types/luxon": "^3.4.2",
-    "bun-types": "^1.0.31",
-    "luxon": "^3.4.4",
-    "typescript": "^5.4.2"
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepare": "tsc -p tsconfig.build.json",
+    "prepublish": "tsc -p tsconfig.build.json",
+    "test": "bun test"
   }
 }
